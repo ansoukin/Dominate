@@ -1,0 +1,51 @@
+# ===== Rust / Cargo =====
+# 编译产物（CARGO_TARGET_DIR 已外置到 C:\cargo-target-dominate，此处仅防御性忽略）
+target/
+**/*.rs.bk
+*.pdb
+
+# ===== Node.js =====
+node_modules/
+dist/assets/
+dist-ssr/
+*.local
+
+# ===== Tauri =====
+# src-tauri/target 已在上方 target/ 规则覆盖
+src-tauri/gen/schemas/
+
+# ===== 运行时数据（便携式部署时生成，不入库）=====
+data/
+logs/
+backup/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# ===== 日志与临时文件 =====
+*.log
+cargo_check.log
+cargo_test.log
+crash-*.dmp
+
+# ===== IDE / 编辑器 =====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ===== 操作系统 =====
+ehthumbs.db
+desktop.ini
+
+# ===== 构建输出 =====
+*.exe
+*.dll
+*.lib
+*.exp
+*.msi
+*.nsis
