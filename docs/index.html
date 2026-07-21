@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dominate — 个人自动化助手</title>
+  <meta name="description" content="基于 Tauri v2 + Rust 的 Windows 桌面自动化工具，采用快捷指令 + 可视化积木理念。">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23FFC131'/%3E%3Ctext x='50' y='72' font-size='64' font-weight='900' text-anchor='middle' fill='%23000' font-family='system-ui'%3ED%3C/text%3E%3C/svg%3E">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              yellow: '#FFC131',
+              'yellow-soft': '#F5B82E',
+              red: '#CE422B',
+              'red-soft': '#D45A3A',
+            },
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Consolas', 'monospace'],
+          },
+        },
+      },
+    }
+  </script>
+
+  <!-- Prism.js for Rust syntax highlighting -->
+  <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-rust.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #fafafa;
+      --bg-card: rgba(255, 255, 255, 0.7);
+      --bg-card-hover: rgba(255, 255, 255, 0.9);
+      --text-primary: #0a0a0f;
+      --text-secondary: #4b5563;
+      --text-tertiary: #9ca3af;
+      --border-color: rgba(0, 0, 0, 0.08);
+      --border-hover: rgba(255, 193, 49, 0.4);
+      --grid-color: rgba(0, 0, 0, 0.04);
+      --glow-yellow: rgba(255, 193, 49, 0.15);
+      --glow-red: rgba(206, 66, 43, 0.08);
+      --code-bg: #1e1e2e;
+      --code-border: rgba(255, 255, 255, 0.08);
+      --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.06);
+      --shadow-hover: 0 12px 40px rgba(255, 193, 49, 0.15);
+    }
+
+    .dark {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #13131a;
+      --bg-card: rgba(19, 19, 26, 0.6);
+      --bg-card-hover: rgba(19, 19, 26, 0.9);
+      --text-primary: #f3f4f6;
+      --text-secondary: #d1d5db;
+      --text-tertiary: #6b7280;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(255, 193, 49, 0.4);
+      --grid-color: rgba(255, 255, 255, 0.03);
+      --glow-yellow: rgba(255, 193, 49, 0.2);
+      --glow-red: rgba(206, 66, 43, 0.12);
+      --code-bg: #0d0d14;
+      --code-border: rgba(255, 255, 255, 0.08);
+      --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3);
+      --shadow-hover: 0 12px 40px rgba(255, 193, 49, 0.2);
+    }
+
+    * { transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease; }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-secondary);
+      background-image:
+        radial-gradient(circle at 15% 20%, var(--glow-yellow) 0%, transparent 40%),
+        radial-gradient(circle at 85% 80%, var(--glow-red) 0%, transparent 40%);
+      background-attachment: fixed;
+    }
+
+    h1, h2, h3, h4 { color: var(--text-primary); }
+
+    /* Grid background */
+    .grid-bg {
+      background-image:
+        linear-gradient(var(--grid-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* Glass card */
+    .glass-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-card);
+      transition: all 0.3s ease;
+    }
+    .glass-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-hover);
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-hover);
+    }
+
+    /* Gradient text */
+    .gradient-text {
+      background: linear-gradient(135deg, #FFC131 0%, #FF8C42 50%, #CE422B 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .fade-in-up { opacity: 0; animation: fadeInUp 0.8s ease-out forwards; }
+    .cursor-blink::after {
+      content: '|';
+      animation: blink 1s infinite;
+      color: #FFC131;
+      font-weight: 100;
+      margin-left: 2px;
+    }
+    .float-anim { animation: float 6s ease-in-out infinite; }
+
+    /* Scroll reveal */
+    .reveal { opacity: 0; transform: translateY(30px); transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* Code block custom */
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--code-border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .code-block pre {
+      margin: 0;
+      padding: 1.5rem;
+      font-size: 0.875rem;
+      line-height: 1.7;
+      background: transparent !important;
+    }
+    .code-block pre code {
+      background: transparent !important;
+      font-family: 'JetBrains Mono', monospace !important;
+    }
+    .code-header {
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--code-border);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .code-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .code-filename { color: var(--text-tertiary); font-size: 0.8rem; margin-left: 0.5rem; font-family: 'JetBrains Mono', monospace; }
+
+    /* FAQ accordion */
+    .faq-item { border-bottom: 1px solid var(--border-color); }
+    .faq-question { cursor: pointer; padding: 1.25rem 0; display: flex; justify-content: space-between; align-items: center; }
+    .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
+    .faq-item.active .faq-answer { max-height: 500px; padding-bottom: 1.25rem; }
+    .faq-item.active .faq-icon { transform: rotate(45deg); }
+    .faq-icon { transition: transform 0.3s ease; color: #FFC131; }
+
+    /* Timeline */
+    .timeline-item { position: relative; padding-left: 2rem; padding-bottom: 2rem; border-left: 2px solid var(--border-color); }
+    .timeline-item:last-child { border-left-color: transparent; }
+    .timeline-dot {
+      position: absolute;
+      left: -7px;
+      top: 0.5rem;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #FFC131;
+      box-shadow: 0 0 0 4px var(--bg-primary);
+    }
+    .timeline-dot.pending { background: var(--text-tertiary); }
+    .timeline-dot.current { background: #FFC131; box-shadow: 0 0 0 4px var(--bg-primary), 0 0 20px #FFC131; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-primary); }
+    ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 5px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+
+    /* Theme toggle */
+    .theme-toggle {
+      width: 56px;
+      height: 28px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .theme-toggle-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 22px;
+      height: 22px;
+      background: #FFC131;
+      border-radius: 50%;
+      transition: transform 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #000;
+      font-size: 12px;
+    }
+    .dark .theme-toggle-thumb { transform: translateX(28px); }
+
+    /* Button primary */
+    .btn-primary {
+      background: #FFC131;
+      color: #000;
+      padding: 0.875rem 1.75rem;
+      border-radius: 10px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-primary:hover {
+      background: #FFD24D;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(255, 193, 49, 0.4);
+    }
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      padding: 0.875rem 1.75rem;
+      border-radius: 10px;
+      font-weight: 500;
+      border: 1px solid var(--border-color);
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-secondary:hover {
+      border-color: var(--border-hover);
+      background: var(--bg-card-hover);
+    }
+  </style>
+</head>
+<body class="font-sans antialiased">
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl" style="background: rgba(10, 10, 15, 0.7); border-bottom: 1px solid var(--border-color);" id="navbar">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="#" class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-brand-yellow flex items-center justify-center text-black font-black text-lg">D</div>
+        <span class="font-bold text-lg" style="color: var(--text-primary);">Dominate</span>
+        <span class="text-xs px-2 py-0.5 rounded ml-1" style="background: rgba(255, 193, 49, 0.15); color: #FFC131; font-family: 'JetBrains Mono', monospace;">0.4.0-α</span>
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-sm" style="color: var(--text-secondary);">
+        <a href="#features" class="hover:text-brand-yellow transition">特性</a>
+        <a href="#code" class="hover:text-brand-yellow transition">代码</a>
+        <a href="#roadmap" class="hover:text-brand-yellow transition">路线图</a>
+        <a href="#faq" class="hover:text-brand-yellow transition">FAQ</a>
+        <a href="#changelog" class="hover:text-brand-yellow transition">更新日志</a>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="theme-toggle" onclick="toggleTheme()" title="切换主题">
+          <div class="theme-toggle-thumb" id="themeThumb">🌙</div>
+        </div>
+        <a href="https://github.com/ansoukin/Dominate" target="_blank" rel="noopener" class="hidden md:flex items-center gap-2 px-4 py-2 rounded-lg btn-secondary text-sm">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.4.5 0 5.9 0 12.5c0 5.3 3.4 9.8 8.2 11.4.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2 1-.3 2-.4 3-.4s2 .1 3 .4c2.3-1.5 3.3-1.2 3.3-1.2.7 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6 4.8-1.6 8.2-6.1 8.2-11.4C24 5.9 18.6.5 12 .5z"/></svg>
+          <span>GitHub</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="relative pt-40 pb-24 px-6 grid-bg overflow-hidden">
+    <div class="max-w-5xl mx-auto text-center relative z-10">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-8 fade-in-up" style="background: rgba(255, 193, 49, 0.1); border: 1px solid rgba(255, 193, 49, 0.2); color: #FFC131; font-size: 0.875rem;">
+        <span class="w-2 h-2 rounded-full bg-brand-yellow animate-pulse"></span>
+        <span style="font-family: 'JetBrains Mono', monospace;">Phase 1 已完成 · 0.4.0-alpha.1</span>
+      </div>
+
+      <h1 class="text-6xl md:text-8xl font-black mb-6 fade-in-up" style="animation-delay: 0.1s; letter-spacing: -0.04em;">
+        <span class="gradient-text">Dominate</span>
+      </h1>
+
+      <p class="text-3xl md:text-4xl font-bold mb-4 fade-in-up" style="animation-delay: 0.2s; color: var(--text-primary); letter-spacing: -0.02em;">
+        让
+        <span id="typewriter" class="cursor-blink gradient-text"></span>
+      </p>
+
+      <p class="text-base md:text-lg max-w-2xl mx-auto mb-12 fade-in-up" style="animation-delay: 0.3s; color: var(--text-secondary); line-height: 1.7;">
+        基于 Tauri v2 + Rust 的 Windows 桌面自动化工具<br>
+        通过"快捷指令 + 可视化积木"理念，将时间触发、系统事件、手动操作与 20 种动作类型自由组合
+      </p>
+
+      <div class="flex flex-wrap items-center justify-center gap-4 fade-in-up" style="animation-delay: 0.4s;">
+        <a href="https://github.com/ansoukin/Dominate" target="_blank" rel="noopener" class="btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.4.5 0 5.9 0 12.5c0 5.3 3.4 9.8 8.2 11.4.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2 1-.3 2-.4 3-.4s2 .1 3 .4c2.3-1.5 3.3-1.2 3.3-1.2.7 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6 4.8-1.6 8.2-6.1 8.2-11.4C24 5.9 18.6.5 12 .5z"/></svg>
+          查看源码
+        </a>
+        <a href="#code" class="btn-secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          查看代码
+        </a>
+      </div>
+
+      <!-- Badges -->
+      <div class="flex flex-wrap items-center justify-center gap-2 mt-16 fade-in-up" style="animation-delay: 0.5s;">
+        <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License" class="inline-block">
+        <img src="https://img.shields.io/badge/Platform-Windows%2010%2F11-0078D4.svg" alt="Platform">
+        <img src="https://img.shields.io/badge/Tauri-v2-FFC131.svg?logo=tauri&logoColor=white" alt="Tauri">
+        <img src="https://img.shields.io/badge/Rust-stable-CE422B.svg?logo=rust&logoColor=white" alt="Rust">
+        <img src="https://img.shields.io/badge/React-18-61DAFB.svg?logo=react&logoColor=white" alt="React">
+        <img src="https://img.shields.io/badge/Phase-1%20Complete-brightgreen.svg" alt="Phase">
+      </div>
+    </div>
+
+    <!-- Floating decorative elements -->
+    <div class="absolute top-1/4 left-10 w-32 h-32 rounded-full float-anim" style="background: radial-gradient(circle, rgba(255, 193, 49, 0.15) 0%, transparent 70%); filter: blur(40px);"></div>
+    <div class="absolute bottom-1/4 right-10 w-48 h-48 rounded-full float-anim" style="background: radial-gradient(circle, rgba(206, 66, 43, 0.1) 0%, transparent 70%); filter: blur(40px); animation-delay: 2s;"></div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="py-24 px-6">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-16 reveal">
+        <p class="text-brand-yellow text-sm font-mono uppercase tracking-widest mb-3">Features</p>
+        <h2 class="text-4xl md:text-5xl font-bold mb-4" style="letter-spacing: -0.02em;">核心特性</h2>
+        <p style="color: var(--text-secondary); max-width: 36rem; margin: 0 auto;">从触发到执行，从可视化编辑到脚本扩展，覆盖完整的自动化链路。</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="glass-card rounded-2xl p-8 reveal">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style="background: rgba(255, 193, 49, 0.1);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFC131" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h3 class="text-xl font-semibold mb-2">多类型触发器</h3>
+          <p class="text-sm leading-relaxed" style="color: var(--text-secondary);">Cron 定时、系统事件（开机/USB/网络/进程）、课表触发、手动按钮。覆盖教室与日常全场景。</p>
+        </div>
+
+        <div class="glass-card rounded-2xl p-8 reveal">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style="background: rgba(206, 66, 43, 0.1);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#CE422B" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          </div>
+          <h3 class="text-xl font-semibold mb-2">20 种动作类型</h3>
+          <p class="text-sm leading-relaxed" style="color: var(--text-secondary);">应用启动、媒体控制、系统电源、Toast 通知、控制流（if/loop/变量）、Lua 脚本，开箱即用。</p>
+        </div>
+
+        <div class="glass-card rounded-2xl p-8 reveal">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style="background: rgba(0, 120, 212, 0.1);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0078D4" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><line x1="9" y1="6" x2="15" y2="6"/><line x1="9" y1="18" x2="15" y2="18"/><line x1="6" y1="9" x2="6" y2="15"/><line x1="18" y1="9" x2="18" y2="15"/></svg>
+          </div>
+          <h3 class="text-xl font-semibold mb-2">可视化积木编辑</h3>
+          <p class="text-sm leading-relaxed" style="color: var(--text-secondary);">基于 React Flow 的三栏编辑器，拖拽积木块组合动作链，支持条件分支、循环、变量传递。</p>
+        </div>
+
+        <div class="glass-card rounded-2xl p-8 reveal">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style="background: rgba(168, 85, 247, 0.1);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <h3 class="text-xl font-semibold mb-2">Lua 脚本扩展</h3>
+          <p class="text-sm leading-relaxed" style="color: var(--text-secondary);">内置 mlua 引擎（Lua 5.4），严格沙箱隔离，支持脚本市场直连 GitHub 仓库浏览与安装。</p>
+        </div>
+
+        <div class="glass-card rounded-2xl p-8 reveal">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style="background: rgba(34, 197, 94, 0.1);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <h3 class="text-xl font-semibold mb-2">容错与日志</h3>
+          <p class="text-sm leading-relaxed" style="color: var(--text-secondary);">每动作可配容错策略（继续/停止/回滚/通知），执行日志持久化到 SQLite，便于回溯。</p>
+        </div>
+
+        <div class="glass-card rounded-2xl p-8 reveal">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style="background: rgba(236, 72, 153, 0.1);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          </div>
+          <h3 class="text-xl font-semibold mb-2">便携式部署</h3>
+          <p class="text-sm leading-relaxed" style="color: var(--text-secondary);">数据与程序同目录，NSIS 安装包分发，支持 U 盘导入导出配置，适配学校机器环境。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Code Showcase -->
+  <section id="code" class="py-24 px-6" style="border-top: 1px solid var(--border-color);">
+    <div class="max-w-5xl mx-auto">
+      <div class="text-center mb-16 reveal">
+        <p class="text-brand-yellow text-sm font-mono uppercase tracking-widest mb-3">Code</p>
+        <h2 class="text-4xl md:text-5xl font-bold mb-4" style="letter-spacing: -0.02em;">看看核心代码</h2>
+        <p style="color: var(--text-secondary); max-width: 36rem; margin: 0 auto;">动作链执行引擎的精华：递归遍历、容错策略、日志记录，一个不少。</p>
+      </div>
+
+      <div class="grid lg:grid-cols-5 gap-8 items-start">
+        <div class="lg:col-span-2 reveal">
+          <h3 class="text-2xl font-bold mb-4">ChainEngine</h3>
+          <p class="text-sm leading-relaxed mb-6" style="color: var(--text-secondary);">
+            动作链执行引擎是 Dominate 的核心调度逻辑。它从数据库加载 Flow 的所有 actions，按 parent_id 构建树形结构，递归执行根节点。
+          </p>
+          <ul class="space-y-3 text-sm" style="color: var(--text-secondary);">
+            <li class="flex items-start gap-3">
+              <span class="text-brand-yellow mt-1">▸</span>
+              <span><strong style="color: var(--text-primary);">递归执行</strong>：按 parent_id 与 order 排序，支持嵌套动作链</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-brand-yellow mt-1">▸</span>
+              <span><strong style="color: var(--text-primary);">控制流</strong>：if/else 分支、loop 循环、break/continue 信号</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-brand-yellow mt-1">▸</span>
+              <span><strong style="color: var(--text-primary);">容错策略</strong>：Continue / Stop / Rollback / Notify</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-brand-yellow mt-1">▸</span>
+              <span><strong style="color: var(--text-primary);">日志持久化</strong>：每动作执行结果写入 SQLite execution_logs</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="lg:col-span-3 reveal">
+          <div class="code-block">
+            <div class="code-header">
+              <div class="code-dot" style="background: #ff5f56;"></div>
+              <div class="code-dot" style="background: #ffbd2e;"></div>
+              <div class="code-dot" style="background: #27c93f;"></div>
+              <span class="code-filename">src/executor/chain.rs</span>
+            </div>
+<pre><code class="language-rust">/// 执行整条快捷指令
+///
+/// 加载 flow 的所有 actions 并按顺序执行，记录执行日志。
+pub fn execute_flow(&amp;self, flow_id: &amp;str) -&gt; Result&lt;ExecutionLog&gt; {
+    let repo = Repository::new(&amp;self.db);
+
+    let flow = repo.get_flow(flow_id)?
+        .ok_or_else(|| AppError::NotFound(format!("快捷指令 {} 不存在", flow_id)))?;
+
+    if !flow.enabled {
+        return Err(AppError::Trigger(format!(
+            "快捷指令 {} 已禁用，无法执行", flow_id
+        )));
+    }
+
+    let actions = repo.list_actions(flow_id)?;
+    tracing::info!(
+        "开始执行快捷指令: id={} name={} actions={}",
+        flow_id, flow.name, actions.len()
+    );
+
+    let mut ctx = ExecutionContext::new(
+        flow_id.to_string(),
+        self.app_handle.clone(),
+        self.global_variables.clone(),
+    );
+
+    let mut flow_log = ExecutionLog::start(flow_id.to_string(), None);
+    repo.insert_log(&amp;flow_log)?;
+
+    // 递归执行根节点（parent_id = None）
+    let result = self.execute_children(
+        &amp;actions, None, &amp;mut ctx, &amp;repo, flow.default_fault_strategy
+    );
+
+    match &amp;result {
+        Ok(_) =&gt; {
+            flow_log.succeed();
+            tracing::info!("快捷指令执行成功: id={}", flow_id);
+        }
+        Err(e) =&gt; {
+            flow_log.fail(e.to_string());
+            tracing::error!("快捷指令执行失败: id={} err={}", flow_id, e);
+        }
+    }
+
+    repo.insert_log(&amp;flow_log)?;
+    Ok(flow_log)
+}</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Roadmap -->
+  <section id="roadmap" class="py-24 px-6" style="border-top: 1px solid var(--border-color);">
+    <div class="max-w-4xl mx-auto">
+      <div class="text-center mb-16 reveal">
+        <p class="text-brand-yellow text-sm font-mono uppercase tracking-widest mb-3">Roadmap</p>
+        <h2 class="text-4xl md:text-5xl font-bold mb-4" style="letter-spacing: -0.02em;">开发路线</h2>
+        <p style="color: var(--text-secondary);">六阶段 MVP 优先策略，避免一次性开发导致的"UI 花瓶"问题。</p>
+      </div>
+
+      <div class="space-y-4">
+        <div class="glass-card rounded-xl p-6 reveal flex items-center gap-6" style="border-left: 4px solid #22c55e;">
+          <div class="text-3xl font-black font-mono w-12" style="color: #22c55e;">01</div>
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-1 flex-wrap">
+              <h3 class="font-semibold text-lg">核心调度 + 动作执行</h3>
+              <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(34, 197, 94, 0.2); color: #22c55e; font-family: 'JetBrains Mono', monospace;">已完成</span>
+            </div>
+            <p class="text-sm" style="color: var(--text-secondary);">Rust 后端骨架、数据库、20 种动作执行器、触发器调度器、ChainEngine、Tauri 命令暴露</p>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-xl p-6 reveal flex items-center gap-6" style="border-left: 4px solid #FFC131;">
+          <div class="text-3xl font-black font-mono w-12" style="color: #FFC131;">02</div>
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-1 flex-wrap">
+              <h3 class="font-semibold text-lg">UI 骨架 + 首页 Dashboard</h3>
+              <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(255, 193, 49, 0.2); color: #FFC131; font-family: 'JetBrains Mono', monospace;">待开发</span>
+            </div>
+            <p class="text-sm" style="color: var(--text-secondary);">前端骨架、Tailwind + shadcn/ui 配置、侧边栏 + 5 页面空骨架、首页 Dashboard 4 模块</p>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-xl p-6 reveal flex items-center gap-6" style="border-left: 4px solid var(--border-color);">
+          <div class="text-3xl font-black font-mono w-12" style="color: var(--text-tertiary);">03</div>
+          <div class="flex-1">
+            <h3 class="font-semibold text-lg mb-1">时间轴页面</h3>
+            <p class="text-sm" style="color: var(--text-secondary);">日/周/月三视图、拖拽编辑、长按菜单、临时调课、多周课表</p>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-xl p-6 reveal flex items-center gap-6" style="border-left: 4px solid var(--border-color);">
+          <div class="text-3xl font-black font-mono w-12" style="color: var(--text-tertiary);">04</div>
+          <div class="flex-1">
+            <h3 class="font-semibold text-lg mb-1">可视化编辑器</h3>
+            <p class="text-sm" style="color: var(--text-secondary);">React Flow 集成、三栏布局、卡片式节点、贝塞尔曲线连线、节点属性编辑</p>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-xl p-6 reveal flex items-center gap-6" style="border-left: 4px solid var(--border-color);">
+          <div class="text-3xl font-black font-mono w-12" style="color: var(--text-tertiary);">05</div>
+          <div class="flex-1">
+            <h3 class="font-semibold text-lg mb-1">Lua 脚本集成</h3>
+            <p class="text-sm" style="color: var(--text-secondary);">mlua 引擎集成、严格沙箱、变量系统、脚本管理页、市场直连 GitHub</p>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-xl p-6 reveal flex items-center gap-6" style="border-left: 4px solid var(--border-color);">
+          <div class="text-3xl font-black font-mono w-12" style="color: var(--text-tertiary);">06</div>
+          <div class="flex-1">
+            <h3 class="font-semibold text-lg mb-1">系统集成 + 主题 + 收尾</h3>
+            <p class="text-sm" style="color: var(--text-secondary);">托盘/自启/Toast、主题系统、动画、NSIS 打包、更新检查器、导入导出</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="py-24 px-6" style="border-top: 1px solid var(--border-color);">
+    <div class="max-w-3xl mx-auto">
+      <div class="text-center mb-16 reveal">
+        <p class="text-brand-yellow text-sm font-mono uppercase tracking-widest mb-3">FAQ</p>
+        <h2 class="text-4xl md:text-5xl font-bold mb-4" style="letter-spacing: -0.02em;">常见问题</h2>
+      </div>
+
+      <div class="glass-card rounded-2xl p-2 reveal">
+        <div class="faq-item" style="border: none;">
+          <div class="faq-question px-6" onclick="toggleFaq(this)">
+            <span class="font-semibold">Dominate 是什么？</span>
+            <span class="faq-icon text-xl">+</span>
+          </div>
+          <div class="faq-answer px-6">
+            <p style="color: var(--text-secondary);" class="text-sm leading-relaxed">
+              Dominate 是一款面向 Windows 的桌面自动化管理工具，定位为"个人自动化助手"。借鉴 iOS 快捷指令设计理念，通过拖拽积木块组合动作链，配合多种触发器实现日常场景的自动化管理。
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question px-6" onclick="toggleFaq(this)">
+            <span class="font-semibold">支持哪些操作系统？</span>
+            <span class="faq-icon text-xl">+</span>
+          </div>
+          <div class="faq-answer px-6">
+            <p style="color: var(--text-secondary);" class="text-sm leading-relaxed">
+              仅支持 Windows 10/11，x64 架构。需要全局管理员权限运行（UAC 已关闭）。不考虑跨平台，专注于 Windows 生态深度集成。
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question px-6" onclick="toggleFaq(this)">
+            <span class="font-semibold">项目是开源的吗？</span>
+            <span class="faq-icon text-xl">+</span>
+          </div>
+          <div class="faq-answer px-6">
+            <p style="color: var(--text-secondary);" class="text-sm leading-relaxed">
+              完全开源，基于 MIT 协议发布。源代码托管在 <a href="https://github.com/ansoukin/Dominate" target="_blank" rel="noopener" class="text-brand-yellow hover:underline">GitHub</a>，欢迎 Star、Issue、PR。
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question px-6" onclick="toggleFaq(this)">
+            <span class="font-semibold">Lua 脚本安全吗？</span>
+            <span class="faq-icon text-xl">+</span>
+          </div>
+          <div class="faq-answer px-6">
+            <p style="color: var(--text-secondary);" class="text-sm leading-relaxed">
+              默认严格沙箱，禁用 os.execute / io.popen / loadfile 等危险 API。用户可在设置中开启可选宽松沙箱（自负风险）。所有 Lua 脚本默认 10 秒超时，防卡死。
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question px-6" onclick="toggleFaq(this)">
+            <span class="font-semibold">数据存储在哪里？是否便携？</span>
+            <span class="faq-icon text-xl">+</span>
+          </div>
+          <div class="faq-answer px-6">
+            <p style="color: var(--text-secondary);" class="text-sm leading-relaxed">
+              数据存储在程序安装目录下的 <code style="background: rgba(255, 193, 49, 0.1); color: #FFC131; padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.85em;">data/dominate.db</code>（SQLite）。便携式部署，支持 U 盘导入导出配置（<code style="background: rgba(255, 193, 49, 0.1); color: #FFC131; padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.85em;">.dominate</code> 格式，含 JSON 数据 + Lua 脚本）。
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question px-6" onclick="toggleFaq(this)">
+            <span class="font-semibold">当前进度如何？</span>
+            <span class="faq-icon text-xl">+</span>
+          </div>
+          <div class="faq-answer px-6">
+            <p style="color: var(--text-secondary);" class="text-sm leading-relaxed">
+              Phase 1（核心调度 + 动作执行）已完成，15 个 unit tests 全部通过。Phase 2（UI 骨架 + 首页 Dashboard）开发中。完整 6 阶段计划见 <a href="https://github.com/ansoukin/Dominate/blob/main/docs/SPEC.md" target="_blank" rel="noopener" class="text-brand-yellow hover:underline">SPEC.md</a>。
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Changelog -->
+  <section id="changelog" class="py-24 px-6" style="border-top: 1px solid var(--border-color);">
+    <div class="max-w-3xl mx-auto">
+      <div class="text-center mb-16 reveal">
+        <p class="text-brand-yellow text-sm font-mono uppercase tracking-widest mb-3">Changelog</p>
+        <h2 class="text-4xl md:text-5xl font-bold mb-4" style="letter-spacing: -0.02em;">更新日志</h2>
+        <p style="color: var(--text-secondary);">版本迭代记录与未来计划。</p>
+      </div>
+
+      <div class="reveal">
+        <div class="timeline-item">
+          <div class="timeline-dot current"></div>
+          <div class="flex items-center gap-3 mb-2 flex-wrap">
+            <span class="font-mono text-sm font-semibold px-2 py-0.5 rounded" style="background: rgba(255, 193, 49, 0.15); color: #FFC131;">0.4.0-alpha.1</span>
+            <span class="text-sm" style="color: var(--text-tertiary);">2026-07-21</span>
+            <span class="px-2 py-0.5 rounded text-xs" style="background: rgba(255, 193, 49, 0.2); color: #FFC131; font-family: 'JetBrains Mono', monospace;">当前</span>
+          </div>
+          <h3 class="font-semibold mb-2">Phase 1 完成：核心调度 + 动作执行骨架</h3>
+          <ul class="text-sm space-y-1" style="color: var(--text-secondary);">
+            <li>• Tauri v2 + Rust 后端项目初始化</li>
+            <li>• 数据库层（rusqlite + refinery，5 张核心表 + 默认设置种子）</li>
+            <li>• 20 种动作执行器（应用/媒体/系统/通知/控制流/Lua）</li>
+            <li>• 触发器调度器（Cron / 系统事件 / 手动三类）</li>
+            <li>• 动作链执行引擎 ChainEngine（顺序/分支/循环/容错）</li>
+            <li>• Tauri 命令暴露（完整 CRUD）</li>
+            <li>• 15 个 unit tests 通过</li>
+          </ul>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot pending"></div>
+          <div class="flex items-center gap-3 mb-2 flex-wrap">
+            <span class="font-mono text-sm font-semibold px-2 py-0.5 rounded" style="background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border-color);">0.4.0-alpha.2</span>
+            <span class="text-sm" style="color: var(--text-tertiary);">计划中</span>
+          </div>
+          <h3 class="font-semibold mb-2">Phase 2：UI 骨架 + 首页 Dashboard</h3>
+          <ul class="text-sm space-y-1" style="color: var(--text-secondary);">
+            <li>• 前端骨架（Tauri + React + pnpm 项目初始化）</li>
+            <li>• Tailwind + shadcn/ui 配置</li>
+            <li>• 侧边栏 + 5 页面空骨架</li>
+            <li>• 首页 Dashboard（性能/今日任务/状态卡/快捷动作）</li>
+          </ul>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot pending"></div>
+          <div class="flex items-center gap-3 mb-2 flex-wrap">
+            <span class="font-mono text-sm font-semibold px-2 py-0.5 rounded" style="background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border-color);">0.4.0-beta.1</span>
+            <span class="text-sm" style="color: var(--text-tertiary);">未来</span>
+          </div>
+          <h3 class="font-semibold mb-2">Phase 3-6：完整功能</h3>
+          <ul class="text-sm space-y-1" style="color: var(--text-secondary);">
+            <li>• 时间轴页面（日/周/月视图、拖拽编辑）</li>
+            <li>• 可视化编辑器（React Flow）</li>
+            <li>• Lua 脚本集成与市场</li>
+            <li>• 系统集成、主题系统、NSIS 打包</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-24 px-6" style="border-top: 1px solid var(--border-color);">
+    <div class="max-w-4xl mx-auto text-center">
+      <h2 class="text-4xl md:text-5xl font-bold mb-6" style="letter-spacing: -0.02em;">
+        <span class="gradient-text">开始探索</span>
+      </h2>
+      <p class="mb-10 max-w-2xl mx-auto" style="color: var(--text-secondary);">
+        源代码完全开源，欢迎 Star、Issue、PR。完整设计文档请见 SPEC.md。
+      </p>
+      <div class="flex flex-wrap items-center justify-center gap-4">
+        <a href="https://github.com/ansoukin/Dominate" target="_blank" rel="noopener" class="btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.4.5 0 5.9 0 12.5c0 5.3 3.4 9.8 8.2 11.4.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2 1-.3 2-.4 3-.4s2 .1 3 .4c2.3-1.5 3.3-1.2 3.3-1.2.7 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6 4.8-1.6 8.2-6.1 8.2-11.4C24 5.9 18.6.5 12 .5z"/></svg>
+          GitHub 仓库
+        </a>
+        <a href="https://github.com/ansoukin/Dominate/blob/main/docs/SPEC.md" target="_blank" rel="noopener" class="btn-secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          设计文档
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-12 px-6" style="border-top: 1px solid var(--border-color);">
+    <div class="max-w-6xl mx-auto">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-brand-yellow flex items-center justify-center text-black font-black text-sm">D</div>
+          <div>
+            <p class="font-semibold text-sm" style="color: var(--text-primary);">Dominate</p>
+            <p class="text-xs" style="color: var(--text-tertiary);">个人自动化助手 · MIT License</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-6 text-sm" style="color: var(--text-tertiary);">
+          <a href="https://github.com/ansoukin/Dominate" target="_blank" rel="noopener" class="hover:text-brand-yellow transition">GitHub</a>
+          <a href="https://github.com/ansoukin/Dominate/blob/main/docs/SPEC.md" target="_blank" rel="noopener" class="hover:text-brand-yellow transition">SPEC.md</a>
+          <a href="https://github.com/ansoukin/Dominate/blob/main/README.md" target="_blank" rel="noopener" class="hover:text-brand-yellow transition">README</a>
+        </div>
+      </div>
+      <div class="mt-8 pt-8 text-center text-xs" style="border-top: 1px solid var(--border-color); color: var(--text-tertiary);">
+        <p>Built with Tauri v2 · Rust · React · Tailwind CSS</p>
+        <p class="mt-2">© 2026 Dominate. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // ===== Theme Toggle =====
+    function toggleTheme() {
+      const html = document.documentElement;
+      const thumb = document.getElementById('themeThumb');
+      const isDark = html.classList.contains('dark');
+      if (isDark) {
+        html.classList.remove('dark');
+        thumb.textContent = '☀️';
+        localStorage.setItem('theme', 'light');
+      } else {
+        html.classList.add('dark');
+        thumb.textContent = '🌙';
+        localStorage.setItem('theme', 'dark');
+      }
+      // Re-highlight code
+      if (window.Prism) Prism.highlightAll();
+    }
+
+    // Init theme
+    (function initTheme() {
+      const saved = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const isDark = saved ? saved === 'dark' : prefersDark;
+      const html = document.documentElement;
+      const thumb = document.getElementById('themeThumb');
+      if (isDark) {
+        html.classList.add('dark');
+        thumb.textContent = '🌙';
+      } else {
+        html.classList.remove('dark');
+        thumb.textContent = '☀️';
+      }
+    })();
+
+    // ===== Typewriter =====
+    const phrases = [
+      '放学自动关机',
+      '上课一键静音',
+      'USB 插入自动备份',
+      '定时清理临时文件',
+      '一键启动工作环境',
+      '进程监控与优化',
+    ];
+    let phraseIndex = 0;
+    let charIndex = 0;
+    let isDeleting = false;
+    const typewriterEl = document.getElementById('typewriter');
+
+    function typeWriter() {
+      const current = phrases[phraseIndex];
+      if (isDeleting) {
+        typewriterEl.textContent = current.substring(0, charIndex - 1);
+        charIndex--;
+        if (charIndex === 0) {
+          isDeleting = false;
+          phraseIndex = (phraseIndex + 1) % phrases.length;
+          setTimeout(typeWriter, 500);
+          return;
+        }
+        setTimeout(typeWriter, 40);
+      } else {
+        typewriterEl.textContent = current.substring(0, charIndex + 1);
+        charIndex++;
+        if (charIndex === current.length) {
+          isDeleting = true;
+          setTimeout(typeWriter, 2000);
+          return;
+        }
+        setTimeout(typeWriter, 100);
+      }
+    }
+    typeWriter();
+
+    // ===== FAQ Accordion =====
+    function toggleFaq(el) {
+      const item = el.parentElement;
+      const isActive = item.classList.contains('active');
+      // Close all
+      document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
+      // Open clicked if it was closed
+      if (!isActive) item.classList.add('active');
+    }
+
+    // ===== Scroll Reveal =====
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // ===== Navbar background on scroll =====
+    window.addEventListener('scroll', () => {
+      const nav = document.getElementById('navbar');
+      if (window.scrollY > 20) {
+        nav.style.background = document.documentElement.classList.contains('dark')
+          ? 'rgba(10, 10, 15, 0.85)'
+          : 'rgba(255, 255, 255, 0.85)';
+      } else {
+        nav.style.background = document.documentElement.classList.contains('dark')
+          ? 'rgba(10, 10, 15, 0.7)'
+          : 'rgba(255, 255, 255, 0.7)';
+      }
+    });
+  </script>
+
+</body>
+</html>
