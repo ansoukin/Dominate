@@ -915,7 +915,7 @@
   <div class="hero-content">
     <div class="hero-chip">
       <span class="hero-chip-dot"></span>
-      Phase 2 已完成 · 0.4.0-alpha.1
+      Phase 3 已完成 · 0.4.0-alpha.1
     </div>
     <h1 class="hero-title">
       <span class="hero-title-gradient">Dominate</span>
@@ -942,7 +942,7 @@
       <img src="https://img.shields.io/badge/Tauri-v2-FFC131.svg?logo=tauri&logoColor=white" alt="Tauri">
       <img src="https://img.shields.io/badge/Rust-stable-CE422B.svg?logo=rust&logoColor=white" alt="Rust">
       <img src="https://img.shields.io/badge/React-18-61DAFB.svg?logo=react&logoColor=white" alt="React">
-      <img src="https://img.shields.io/badge/Phase-2%20Complete-brightgreen.svg" alt="Phase">
+      <img src="https://img.shields.io/badge/Phase-3%20Complete-brightgreen.svg" alt="Phase">
     </div>
   </div>
 </section>
@@ -1134,17 +1134,17 @@ return { success = true, count = count }</code></pre>
           <div class="roadmap-desc">前端骨架、Tailwind + shadcn/ui 配置、侧边栏 + 5 页面空骨架、首页 Dashboard 4 模块</div>
         </div>
       </div>
-      <div class="roadmap-item current reveal">
+      <div class="roadmap-item done reveal">
         <div class="roadmap-num">03</div>
         <div class="roadmap-info">
-          <div class="roadmap-name">时间轴页面 <span class="roadmap-tag">待开发</span></div>
+          <div class="roadmap-name">时间轴页面 <span class="roadmap-tag">已完成</span></div>
           <div class="roadmap-desc">日/周/月三视图、拖拽编辑、长按菜单、临时调课、多周课表</div>
         </div>
       </div>
-      <div class="roadmap-item pending reveal">
+      <div class="roadmap-item current reveal">
         <div class="roadmap-num">04</div>
         <div class="roadmap-info">
-          <div class="roadmap-name">可视化编辑器</div>
+          <div class="roadmap-name">可视化编辑器 <span class="roadmap-tag">待开发</span></div>
           <div class="roadmap-desc">React Flow 集成、三栏布局、卡片式节点、贝塞尔曲线连线、节点属性编辑</div>
         </div>
       </div>
@@ -1197,7 +1197,7 @@ return { success = true, count = count }</code></pre>
       </div>
       <div class="faq-item">
         <div class="faq-q" onclick="toggleFaq(this)"><span>当前进度如何？</span><span class="faq-chevron">+</span></div>
-        <div class="faq-a"><p>Phase 1（核心调度 + 动作执行）与 Phase 2（UI 骨架 + 首页 Dashboard）均已完成。前端骨架、侧边栏、5 页面骨架与 Dashboard 4 模块已联调通过。下一步进入 Phase 3（时间轴页面）。完整计划见 <a href="https://github.com/ansoukin/Dominate/blob/main/docs/SPEC.md" target="_blank" rel="noopener">SPEC.md</a>。</p></div>
+        <div class="faq-a"><p>Phase 1（核心调度 + 动作执行）、Phase 2（UI 骨架 + 首页 Dashboard）与 Phase 3（时间轴页面）均已完成。时间轴三视图、拖拽编辑、长按菜单、临时调课、学期制多周课表已联调通过。下一步进入 Phase 4（可视化编辑器）。完整计划见 <a href="https://github.com/ansoukin/Dominate/blob/main/docs/SPEC.md" target="_blank" rel="noopener">SPEC.md</a>。</p></div>
       </div>
     </div>
   </div>
@@ -1218,6 +1218,22 @@ return { success = true, count = count }</code></pre>
           <span class="cl-version current">0.4.0-alpha.1</span>
           <span class="cl-date">2026-07-22</span>
           <span class="cl-tag now">当前</span>
+        </div>
+        <div class="cl-title">Phase 3 完成：时间轴页面</div>
+        <ul class="cl-list">
+          <li>V003/V004 迁移：4 张新表 + 示例学期与课表数据</li>
+          <li>models/semester.rs + models/course.rs + commands/courses.rs（18 命令）</li>
+          <li>时间轴三视图（日 / 周 / 月）+ 格点/自由双模式</li>
+          <li>@dnd-kit 拖拽编辑（Pointer + Touch + Keyboard 三传感器）</li>
+          <li>长按 500ms 操作菜单（编辑/复制/临时取消/临时调整/删除）</li>
+          <li>临时调课（cancel/move）+ 学期制多周课表（all/odd/even）</li>
+          <li>5 个新 shadcn/ui 组件（dialog/input/label/textarea/select）</li>
+        </ul>
+      </div>
+      <div class="cl-item">
+        <div class="cl-header">
+          <span class="cl-version pending">0.4.0-alpha.1</span>
+          <span class="cl-date">2026-07-22</span>
         </div>
         <div class="cl-title">Phase 2 完成：UI 骨架 + 首页 Dashboard</div>
         <ul class="cl-list">
@@ -1250,9 +1266,9 @@ return { success = true, count = count }</code></pre>
           <span class="cl-version pending">0.4.0-beta.1</span>
           <span class="cl-date">未来</span>
         </div>
-        <div class="cl-title">Phase 3-6：完整功能</div>
+        <div class="cl-title">Phase 4-6：完整功能</div>
         <ul class="cl-list">
-          <li>时间轴页面 · 可视化编辑器 · Lua 脚本集成与市场</li>
+          <li>可视化编辑器 · Lua 脚本集成与市场</li>
           <li>系统集成、主题系统、NSIS 打包</li>
         </ul>
       </div>

@@ -6,13 +6,24 @@
 [![Rust](https://img.shields.io/badge/Rust-stable-CE422B.svg?logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-18-61DAFB.svg?logo=react&logoColor=white)](https://react.dev/)
 [![Version](https://img.shields.io/badge/Version-0.4.0--alpha.1-orange.svg)]()
-[![Phase](https://img.shields.io/badge/Phase-2%20Complete-brightgreen.svg)]()
+[![Phase](https://img.shields.io/badge/Phase-3%20Complete-brightgreen.svg)]()
 
 个人自动化助手 — 基于 Tauri v2 + Rust 的 Windows 桌面自动化工具。
 
 通过"快捷指令 + 可视化积木"理念，将时间触发、系统事件、手动操作等多种触发方式与 20 种动作类型组合，实现日常场景的自动化。
 
 ## 当前状态
+
+**Phase 3 已完成** — 时间轴页面：
+
+- V003/V004 迁移：4 张新表（semesters / class_periods / courses / schedule_overrides）+ 示例学期与课表
+- models/semester.rs + models/course.rs + commands/courses.rs（18 个 Tauri 命令）
+- 时间轴三视图（日 / 周 / 月）+ 格点/自由双模式
+- @dnd-kit 拖拽编辑（Pointer + Touch + Keyboard 三传感器，30Hz 触屏）
+- 长按 500ms 操作菜单（编辑 / 复制 / 临时取消 / 临时调整 / 删除）
+- 临时调课（cancel / move，不修改常规课表）
+- 学期制多周课表（week_pattern: all / odd / even）
+- 5 个新 shadcn/ui 组件（dialog / input / label / textarea / select）
 
 **Phase 2 已完成** — UI 骨架 + 首页 Dashboard：
 
