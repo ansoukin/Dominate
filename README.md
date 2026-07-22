@@ -6,13 +6,23 @@
 [![Rust](https://img.shields.io/badge/Rust-stable-CE422B.svg?logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-18-61DAFB.svg?logo=react&logoColor=white)](https://react.dev/)
 [![Version](https://img.shields.io/badge/Version-0.4.0--alpha.1-orange.svg)]()
-[![Phase](https://img.shields.io/badge/Phase-1%20Complete-brightgreen.svg)]()
+[![Phase](https://img.shields.io/badge/Phase-2%20Complete-brightgreen.svg)]()
 
 个人自动化助手 — 基于 Tauri v2 + Rust 的 Windows 桌面自动化工具。
 
 通过"快捷指令 + 可视化积木"理念，将时间触发、系统事件、手动操作等多种触发方式与 20 种动作类型组合，实现日常场景的自动化。
 
 ## 当前状态
+
+**Phase 2 已完成** — UI 骨架 + 首页 Dashboard：
+
+- Tauri v2 + React 18 + TypeScript + Vite 前端骨架
+- Tailwind CSS v3 + shadcn/ui 配置（Win11 Fluent Design，8 色主题色板）
+- 侧边栏布局（D Logo + 5 项导航 + 可折叠，触控目标 ≥ 48px）
+- 5 页面骨架（首页 / 时间轴 / 快捷指令 / 性能优化 / 设置）
+- 首页 Dashboard 4 模块（今日任务预览 / 最近执行记录 / 系统状态占位 / 快捷动作）
+- Zustand 状态管理（页面切换 + 侧边栏折叠）
+- Tauri 命令完整封装（TypeScript 镜像后端模型与命令）
 
 **Phase 1 已完成** — 核心调度与动作执行骨架：
 
@@ -51,7 +61,7 @@ cd src-tauri
 
 ```text
 Dominate/
-├── src-tauri/
+├── src-tauri/               # Rust 后端
 │   ├── src/
 │   │   ├── db/              # 数据库层（connection / migrations / repository）
 │   │   ├── models/          # 数据模型（flow / action / trigger / log / setting）
@@ -63,8 +73,16 @@ Dominate/
 │   │   └── error.rs         # 错误类型
 │   ├── migrations/          # SQL 迁移脚本
 │   └── Cargo.toml
+├── src/                     # React 前端
+│   ├── components/          # 复用组件（Layout / Sidebar / ui）
+│   ├── pages/               # 5 大页面 + home 子模块
+│   ├── stores/              # Zustand stores
+│   ├── lib/                 # 工具库（tauri 封装 / utils）
+│   ├── App.tsx
+│   └── main.tsx
 ├── docs/
 │   └── SPEC.md              # 设计规格文档
+├── package.json
 └── .gitignore
 ```
 

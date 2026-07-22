@@ -11,7 +11,7 @@ use std::sync::Arc;
 
 use parking_lot::RwLock;
 use tauri::AppHandle;
-use tokio::task::JoinHandle;
+use tauri::async_runtime::{spawn, JoinHandle};
 
 use crate::db::Database;
 use crate::error::{AppError, Result};
@@ -233,7 +233,7 @@ impl TriggerScheduler {
             .ok_or_else(|| AppError::Trigger("未注入执行回调".into()))?;
         let app_handle = self.app_handle.clone();
 
-        let task = tokio::spawn(async move {
+        let task = spawn(async move {
             tracing::info!(
                 "Cron 触发器已启动: trigger={} flow={} expr={} next={}",
                 trigger_id, flow_id, expr, next

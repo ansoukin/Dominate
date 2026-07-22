@@ -12,7 +12,7 @@ use std::time::Duration;
 
 use parking_lot::RwLock;
 use sysinfo::{ProcessesToUpdate, System};
-use tokio::task::JoinHandle;
+use tauri::async_runtime::{spawn, JoinHandle};
 use tokio::time::interval;
 
 use crate::models::common::TriggerType;
@@ -75,7 +75,7 @@ impl SystemEventMonitor {
         let matches = self.matches.clone();
         let cb = callback.clone();
 
-        let task = tokio::spawn(async move {
+        let task = spawn(async move {
             tracing::info!("系统事件监控器已启动");
 
             let mut sys = System::new();

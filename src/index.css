@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+ * Dominate 全局样式
+ * 设计依据：SPEC 3.1 Win11 Fluent Design
+ * - 8px 网格系统
+ * - 圆角 6-8px（--radius: 0.5rem = 8px）
+ * - 200ms 动画过渡（兼容 30Hz 屏幕）
+ * - 深浅模式跟随系统
+ * ============================================================ */
+
+@layer base {
+  :root {
+    /* shadcn/ui 基础色板（slate，浅色） */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    /* primary 默认 = Win11 蓝（Phase 6 主题切换时动态修改） */
+    --primary: 206 100% 42%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 206 100% 42%;
+    --radius: 0.5rem;
+
+    /* Win11 8 色主题色板（SPEC 3.2，Phase 6 主题切换使用） */
+    --win-blue: 206 100% 42%;
+    --win-green: 122 78% 27%;
+    --win-orange: 14 97% 43%;
+    --win-purple: 265 53% 37%;
+    --win-red: 352 86% 49%;
+    --win-cyan: 187 100% 38%;
+    --win-pink: 322 100% 44%;
+    --win-yellow: 45 100% 50%;
+
+    /* 侧边栏专用变量（参考 1Panel 配色） */
+    --sidebar: 210 40% 98%;
+    --sidebar-foreground: 222.2 47.4% 11.2%;
+    --sidebar-accent: 206 100% 42%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 47% 9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 47% 9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 206 100% 48%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 206 100% 48%;
+
+    /* Win11 8 色在暗色下稍提亮 */
+    --win-blue: 206 100% 52%;
+    --win-green: 122 70% 40%;
+    --win-orange: 14 95% 55%;
+    --win-purple: 265 60% 55%;
+    --win-red: 352 85% 60%;
+    --win-cyan: 187 100% 50%;
+    --win-pink: 322 100% 55%;
+    --win-yellow: 45 100% 55%;
+
+    --sidebar: 222.2 47% 7%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-accent: 206 100% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Segoe UI Variable", "Segoe UI", -apple-system,
+      BlinkMacSystemFont, "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+    /* SPEC 3.1：200ms 动画过渡 */
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+  }
+
+  /* 允许输入框/文本区域选中文本 */
+  input,
+  textarea,
+  [contenteditable="true"] {
+    user-select: text;
+  }
+}
+
+/* 滚动条样式（Win11 Fluent 风格） */
+@layer utilities {
+  .scrollbar-fluent {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+  }
+  .scrollbar-fluent::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scrollbar-fluent::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-fluent::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 4px;
+  }
+  .scrollbar-fluent::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.5);
+  }
+}

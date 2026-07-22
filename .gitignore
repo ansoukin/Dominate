@@ -9,6 +9,10 @@ node_modules/
 dist/assets/
 dist-ssr/
 *.local
+# Vite 临时文件
+vite.config.ts.timestamp-*
+# TypeScript 增量构建缓存
+*.tsbuildinfo
 
 # ===== Tauri =====
 # src-tauri/target 已在上方 target/ 规则覆盖
