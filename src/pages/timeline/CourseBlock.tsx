@@ -2,7 +2,7 @@ import { MapPin, User, Zap, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { Course } from "@/lib/tauri";
-import { useLongPress } from "./useLongPress";
+import { useLongPress, type LongPressPosition } from "./useLongPress";
 import { formatTimeRange } from "./utils";
 
 /**
@@ -42,8 +42,8 @@ interface CourseBlockProps {
   isOverride?: boolean;
   /** 点击展开详情 */
   onClick?: (course: Course) => void;
-  /** 长按弹出操作菜单（SPEC 3.5：触屏无右键） */
-  onLongPress?: (course: Course) => void;
+  /** 长按/右键弹出操作菜单（触屏长按 500ms，鼠标右键即时） */
+  onLongPress?: (course: Course, pos: LongPressPosition) => void;
   /** 拖拽 props 注入（步骤 5 由 dnd-kit 提供） */
   dragAttributes?: Record<string, unknown>;
   dragListeners?: Record<string, unknown>;
@@ -59,7 +59,10 @@ interface CourseBlockProps {
  * 课程块组件（SPEC 3.5 页面 2：信息丰富型）
  *
  * 显示：科目名 + 时间 + 关联指令图标 + 颜色标识
- * 交互：点击展开详情，长按 500ms 弹出操作菜单
+ * 交互：
+ * - 点击展开详情
+ * - 鼠标右键即时弹出操作菜单
+ * - 触屏长按 500ms 弹出操作菜单（SPEC 3.5：触屏无右键）
  */
 export function CourseBlock({
   course,
@@ -77,7 +80,15 @@ export function CourseBlock({
   className,
 }: CourseBlockProps) {
   const color = course.color || hashColor(course.subject_name);
-  const longPress = useLongPress(() => onLongPress?.(course), 500);
+  const longPress = useLongPress((pos) => onLongPress?.(course, pos), 500);
+
+  // 鼠标右键即时触发菜单（无需等待 500ms 长按）
+  const handleContextMenu = (e: React.MouseEvent) => {
+    if (!onLongPress) return;
+    e.preventDefault();
+    e.stopPropagation();
+    onLongPress(course, { x: e.clientX, y: e.clientY });
+  };
 
   if (compact) {
     // 月视图紧凑模式：仅显示色条 + 科目名
@@ -87,6 +98,7 @@ export function CourseBlock({
         {...dragAttributes}
         {...dragListeners}
         {...longPress}
+        onContextMenu={handleContextMenu}
         onClick={(e) => {
           e.stopPropagation();
           if (!longPress.isLongPress) onClick?.(course);
@@ -118,6 +130,7 @@ export function CourseBlock({
       {...dragAttributes}
       {...dragListeners}
       {...longPress}
+      onContextMenu={handleContextMenu}
       onClick={(e) => {
         e.stopPropagation();
         if (!longPress.isLongPress) onClick?.(course);

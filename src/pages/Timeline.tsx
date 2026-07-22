@@ -23,6 +23,7 @@ import { CourseFormDialog } from "./timeline/CourseFormDialog";
 import { CourseActionMenu, type CourseActionMenuPosition } from "./timeline/CourseActionMenu";
 import { OverrideDialog } from "./timeline/OverrideDialog";
 import { todayIso } from "./timeline/utils";
+import type { LongPressPosition } from "./timeline/useLongPress";
 
 /**
  * 时间轴页面（SPEC 3.5 页面 2）
@@ -140,14 +141,10 @@ export default function TimelinePage() {
     []
   );
 
-  // 长按课程 → 弹出操作菜单（SPEC 3.5：触屏无右键）
+  // 长按/右键课程 → 弹出操作菜单（触屏长按 500ms，鼠标右键即时）
   const handleCourseLongPress = useCallback(
-    (course: Course) => {
-      // 使用最后触发事件的坐标（长按 hook 无法直接传坐标，取屏幕中央作为兜底）
-      // 实际场景中 pointer event 已在 CourseBlock 内消费，这里用视口中央
-      const x = window.innerWidth / 2 - 90;
-      const y = window.innerHeight / 2 - 100;
-      setMenuPosition({ x, y });
+    (course: Course, pos: LongPressPosition) => {
+      setMenuPosition({ x: pos.x, y: pos.y });
       setMenuCourse(course);
     },
     []
