@@ -915,7 +915,7 @@
   <div class="hero-content">
     <div class="hero-chip">
       <span class="hero-chip-dot"></span>
-      Phase 1 已完成 · 0.4.0-alpha.1
+      Phase 2 已完成 · 0.4.0-alpha.1
     </div>
     <h1 class="hero-title">
       <span class="hero-title-gradient">Dominate</span>
@@ -942,7 +942,7 @@
       <img src="https://img.shields.io/badge/Tauri-v2-FFC131.svg?logo=tauri&logoColor=white" alt="Tauri">
       <img src="https://img.shields.io/badge/Rust-stable-CE422B.svg?logo=rust&logoColor=white" alt="Rust">
       <img src="https://img.shields.io/badge/React-18-61DAFB.svg?logo=react&logoColor=white" alt="React">
-      <img src="https://img.shields.io/badge/Phase-1%20Complete-brightgreen.svg" alt="Phase">
+      <img src="https://img.shields.io/badge/Phase-2%20Complete-brightgreen.svg" alt="Phase">
     </div>
   </div>
 </section>
@@ -1127,17 +1127,17 @@ return { success = true, count = count }</code></pre>
           <div class="roadmap-desc">Rust 后端骨架、数据库、20+ 种动作执行器、触发器调度器、ChainEngine、Tauri 命令暴露</div>
         </div>
       </div>
-      <div class="roadmap-item current reveal">
+      <div class="roadmap-item done reveal">
         <div class="roadmap-num">02</div>
         <div class="roadmap-info">
-          <div class="roadmap-name">UI 骨架 + 首页 Dashboard <span class="roadmap-tag">待开发</span></div>
+          <div class="roadmap-name">UI 骨架 + 首页 Dashboard <span class="roadmap-tag">已完成</span></div>
           <div class="roadmap-desc">前端骨架、Tailwind + shadcn/ui 配置、侧边栏 + 5 页面空骨架、首页 Dashboard 4 模块</div>
         </div>
       </div>
-      <div class="roadmap-item pending reveal">
+      <div class="roadmap-item current reveal">
         <div class="roadmap-num">03</div>
         <div class="roadmap-info">
-          <div class="roadmap-name">时间轴页面</div>
+          <div class="roadmap-name">时间轴页面 <span class="roadmap-tag">待开发</span></div>
           <div class="roadmap-desc">日/周/月三视图、拖拽编辑、长按菜单、临时调课、多周课表</div>
         </div>
       </div>
@@ -1197,7 +1197,7 @@ return { success = true, count = count }</code></pre>
       </div>
       <div class="faq-item">
         <div class="faq-q" onclick="toggleFaq(this)"><span>当前进度如何？</span><span class="faq-chevron">+</span></div>
-        <div class="faq-a"><p>Phase 1（核心调度 + 动作执行）已完成，15 个 unit tests 全部通过。Phase 2（UI 骨架 + 首页 Dashboard）开发中。完整计划见 <a href="https://github.com/ansoukin/Dominate/blob/main/docs/SPEC.md" target="_blank" rel="noopener">SPEC.md</a>。</p></div>
+        <div class="faq-a"><p>Phase 1（核心调度 + 动作执行）与 Phase 2（UI 骨架 + 首页 Dashboard）均已完成。前端骨架、侧边栏、5 页面骨架与 Dashboard 4 模块已联调通过。下一步进入 Phase 3（时间轴页面）。完整计划见 <a href="https://github.com/ansoukin/Dominate/blob/main/docs/SPEC.md" target="_blank" rel="noopener">SPEC.md</a>。</p></div>
       </div>
     </div>
   </div>
@@ -1216,8 +1216,24 @@ return { success = true, count = count }</code></pre>
       <div class="cl-item">
         <div class="cl-header">
           <span class="cl-version current">0.4.0-alpha.1</span>
-          <span class="cl-date">2026-07-21</span>
+          <span class="cl-date">2026-07-22</span>
           <span class="cl-tag now">当前</span>
+        </div>
+        <div class="cl-title">Phase 2 完成：UI 骨架 + 首页 Dashboard</div>
+        <ul class="cl-list">
+          <li>前端骨架（Vite + React 18 + TypeScript + pnpm）</li>
+          <li>Tailwind v3 + shadcn/ui 配置（Win11 Fluent Design，8 色主题色板）</li>
+          <li>侧边栏布局（D Logo + 5 项导航 + 可折叠，触控目标 ≥ 48px）</li>
+          <li>5 页面骨架（首页 / 时间轴 / 快捷指令 / 性能优化 / 设置）</li>
+          <li>首页 Dashboard 4 模块（今日任务 / 最近记录 / 系统状态占位 / 快捷动作）</li>
+          <li>Zustand 状态管理 + Tauri 命令完整 TypeScript 封装</li>
+          <li>修复 Phase 1 遗留 bug：tokio::spawn 在 Tauri setup 中 panic</li>
+        </ul>
+      </div>
+      <div class="cl-item">
+        <div class="cl-header">
+          <span class="cl-version pending">0.4.0-alpha.1</span>
+          <span class="cl-date">2026-07-21</span>
         </div>
         <div class="cl-title">Phase 1 完成：核心调度 + 动作执行骨架</div>
         <ul class="cl-list">
@@ -1227,19 +1243,6 @@ return { success = true, count = count }</code></pre>
           <li>触发器调度器（Cron / 系统事件 / 手动三类）</li>
           <li>动作链执行引擎 ChainEngine（顺序/分支/循环/容错）</li>
           <li>Tauri 命令暴露（完整 CRUD）· 15 个 unit tests 通过</li>
-        </ul>
-      </div>
-      <div class="cl-item">
-        <div class="cl-header">
-          <span class="cl-version pending">0.4.0-alpha.2</span>
-          <span class="cl-date">计划中</span>
-        </div>
-        <div class="cl-title">Phase 2：UI 骨架 + 首页 Dashboard</div>
-        <ul class="cl-list">
-          <li>前端骨架（Tauri + React + pnpm 项目初始化）</li>
-          <li>Tailwind + shadcn/ui 配置</li>
-          <li>侧边栏 + 5 页面空骨架</li>
-          <li>首页 Dashboard（性能/今日任务/状态卡/快捷动作）</li>
         </ul>
       </div>
       <div class="cl-item">
