@@ -9,6 +9,7 @@
 //! - `triggers`：触发器管理
 //! - `execution`：执行与日志
 //! - `settings`：设置读写
+//! - `courses`：学期 / 节次 / 课程 / 临时调课
 //! - `test`：端到端测试
 
 pub mod db;
@@ -17,4 +18,5 @@ pub mod actions;
 pub mod triggers;
 pub mod execution;
 pub mod settings;
+pub mod courses;
 pub mod test;

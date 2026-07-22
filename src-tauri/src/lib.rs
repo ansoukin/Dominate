@@ -77,6 +77,28 @@ pub fn run() {
             commands::settings::get_setting,
             commands::settings::set_setting,
             commands::settings::get_all_settings,
+            // 学期相关命令
+            commands::courses::list_semesters,
+            commands::courses::get_semester,
+            commands::courses::get_active_semester,
+            commands::courses::create_semester,
+            commands::courses::update_semester,
+            commands::courses::delete_semester,
+            // 节次定义命令
+            commands::courses::list_class_periods,
+            commands::courses::set_class_periods,
+            // 课程相关命令
+            commands::courses::list_courses,
+            commands::courses::get_course,
+            commands::courses::create_course,
+            commands::courses::update_course,
+            commands::courses::delete_course,
+            // 临时调课命令
+            commands::courses::list_overrides,
+            commands::courses::list_overrides_by_date,
+            commands::courses::create_override,
+            commands::courses::delete_override,
+            commands::courses::delete_overrides_by_date,
             // 测试命令
             commands::test::e2e_test,
         ])

@@ -5,13 +5,16 @@
 use chrono::{DateTime, Utc};
 use rusqlite::{params, OptionalExtension};
 use serde_json::Value;
+use uuid::Uuid;
 
 use crate::db::Database;
 use crate::error::{AppError, Result};
 use crate::models::{
     common::{ActionType, ExecutionStatus, TriggerType},
-    Action, AutomationFlow, CreateFlowRequest, ExecutionLog, LogFilter, Setting, Trigger,
-    UpdateFlowRequest,
+    Action, AutomationFlow, ClassPeriod, ClassPeriodInput, Course, CreateCourseRequest,
+    CreateFlowRequest, CreateOverrideRequest, CreateSemesterRequest, ExecutionLog, LogFilter,
+    OverrideType, ScheduleOverride, Semester, Setting, Trigger, UpdateCourseRequest,
+    UpdateFlowRequest, UpdateSemesterRequest,
 };
 
 /// 仓库：提供所有实体的 CRUD 操作
@@ -434,6 +437,453 @@ impl<'a> Repository<'a> {
             Ok(settings)
         })
     }
+
+    // ============ 学期 CRUD ============
+
+    /// 列出所有学期
+    pub fn list_semesters(&self) -> Result<Vec<Semester>> {
+        self.db.with_conn(|conn| {
+            let mut stmt = conn.prepare(
+                "SELECT id, name, start_date, end_date, total_weeks, is_active, created_at, updated_at
+                 FROM semesters
+                 ORDER BY start_date DESC",
+            )?;
+            let semesters = stmt
+                .query_map([], row_to_semester)?
+                .collect::<rusqlite::Result<Vec<_>>>()?;
+            Ok(semesters)
+        })
+    }
+
+    /// 获取单个学期
+    pub fn get_semester(&self, id: &str) -> Result<Option<Semester>> {
+        self.db.with_conn(|conn| {
+            let semester = conn
+                .query_row(
+                    "SELECT id, name, start_date, end_date, total_weeks, is_active, created_at, updated_at
+                     FROM semesters WHERE id = ?1",
+                    params![id],
+                    row_to_semester,
+                )
+                .optional()?;
+            Ok(semester)
+        })
+    }
+
+    /// 获取当前激活学期
+    pub fn get_active_semester(&self) -> Result<Option<Semester>> {
+        self.db.with_conn(|conn| {
+            let semester = conn
+                .query_row(
+                    "SELECT id, name, start_date, end_date, total_weeks, is_active, created_at, updated_at
+                     FROM semesters WHERE is_active = 1 LIMIT 1",
+                    [],
+                    row_to_semester,
+                )
+                .optional()?;
+            Ok(semester)
+        })
+    }
+
+    /// 创建学期
+    pub fn create_semester(&self, req: CreateSemesterRequest) -> Result<Semester> {
+        let semester = Semester::new(req.name, req.start_date, req.end_date, req.total_weeks);
+
+        self.db.with_conn(|conn| {
+            conn.execute(
+                "INSERT INTO semesters
+                 (id, name, start_date, end_date, total_weeks, is_active, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                params![
+                    semester.id,
+                    semester.name,
+                    semester.start_date,
+                    semester.end_date,
+                    semester.total_weeks,
+                    semester.is_active as i32,
+                    semester.created_at.to_rfc3339(),
+                    semester.updated_at.to_rfc3339(),
+                ],
+            )?;
+            Ok(())
+        })?;
+
+        Ok(semester)
+    }
+
+    /// 更新学期
+    pub fn update_semester(&self, id: &str, req: UpdateSemesterRequest) -> Result<Semester> {
+        let mut semester = self
+            .get_semester(id)?
+            .ok_or_else(|| AppError::NotFound(format!("学期 {} 不存在", id)))?;
+
+        if let Some(name) = req.name {
+            semester.name = name;
+        }
+        if let Some(start_date) = req.start_date {
+            semester.start_date = start_date;
+        }
+        if let Some(end_date) = req.end_date {
+            semester.end_date = end_date;
+        }
+        if let Some(total_weeks) = req.total_weeks {
+            semester.total_weeks = total_weeks;
+        }
+        if let Some(is_active) = req.is_active {
+            semester.is_active = is_active;
+        }
+        semester.updated_at = Utc::now();
+
+        // 激活学期为互斥操作：同一时刻仅一个学期激活
+        self.db.with_transaction(|tx| {
+            if semester.is_active {
+                tx.execute(
+                    "UPDATE semesters SET is_active = 0 WHERE id != ?1",
+                    params![semester.id],
+                )?;
+            }
+            tx.execute(
+                "UPDATE semesters
+                 SET name = ?2, start_date = ?3, end_date = ?4, total_weeks = ?5,
+                     is_active = ?6, updated_at = ?7
+                 WHERE id = ?1",
+                params![
+                    semester.id,
+                    semester.name,
+                    semester.start_date,
+                    semester.end_date,
+                    semester.total_weeks,
+                    semester.is_active as i32,
+                    semester.updated_at.to_rfc3339(),
+                ],
+            )?;
+            Ok(())
+        })?;
+
+        Ok(semester)
+    }
+
+    /// 删除学期（级联删除节次/课程/调课）
+    pub fn delete_semester(&self, id: &str) -> Result<()> {
+        self.db.with_conn(|conn| {
+            conn.execute("DELETE FROM semesters WHERE id = ?1", params![id])?;
+            Ok(())
+        })
+    }
+
+    // ============ 节次定义 CRUD ============
+
+    /// 列出指定学期的所有节次（按节次顺序）
+    pub fn list_class_periods(&self, semester_id: &str) -> Result<Vec<ClassPeriod>> {
+        self.db.with_conn(|conn| {
+            let mut stmt = conn.prepare(
+                "SELECT id, semester_id, period_index, start_time, end_time, label
+                 FROM class_periods
+                 WHERE semester_id = ?1
+                 ORDER BY period_index ASC",
+            )?;
+            let periods = stmt
+                .query_map(params![semester_id], row_to_class_period)?
+                .collect::<rusqlite::Result<Vec<_>>>()?;
+            Ok(periods)
+        })
+    }
+
+    /// 替换指定学期的所有节次（事务：先删除旧的再插入新的）
+    pub fn set_class_periods(
+        &self,
+        semester_id: &str,
+        periods: &[ClassPeriodInput],
+    ) -> Result<()> {
+        self.db.with_transaction(|tx| {
+            tx.execute(
+                "DELETE FROM class_periods WHERE semester_id = ?1",
+                params![semester_id],
+            )?;
+            for p in periods {
+                tx.execute(
+                    "INSERT INTO class_periods
+                     (id, semester_id, period_index, start_time, end_time, label)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                    params![
+                        Uuid::new_v4().to_string(),
+                        semester_id,
+                        p.period_index,
+                        p.start_time,
+                        p.end_time,
+                        p.label,
+                    ],
+                )?;
+            }
+            Ok(())
+        })
+    }
+
+    // ============ 课程 CRUD ============
+
+    /// 列出指定学期的所有课程
+    pub fn list_courses(&self, semester_id: &str) -> Result<Vec<Course>> {
+        self.db.with_conn(|conn| {
+            let mut stmt = conn.prepare(
+                "SELECT id, semester_id, subject_name, day_of_week, period_index, start_time,
+                        end_time, week_pattern, location, teacher, color, flow_id, note,
+                        created_at, updated_at
+                 FROM courses
+                 WHERE semester_id = ?1
+                 ORDER BY day_of_week ASC, COALESCE(period_index, 0) ASC",
+            )?;
+            let courses = stmt
+                .query_map(params![semester_id], row_to_course)?
+                .collect::<rusqlite::Result<Vec<_>>>()?;
+            Ok(courses)
+        })
+    }
+
+    /// 获取单个课程
+    pub fn get_course(&self, id: &str) -> Result<Option<Course>> {
+        self.db.with_conn(|conn| {
+            let course = conn
+                .query_row(
+                    "SELECT id, semester_id, subject_name, day_of_week, period_index, start_time,
+                            end_time, week_pattern, location, teacher, color, flow_id, note,
+                            created_at, updated_at
+                     FROM courses WHERE id = ?1",
+                    params![id],
+                    row_to_course,
+                )
+                .optional()?;
+            Ok(course)
+        })
+    }
+
+    /// 创建课程
+    pub fn create_course(&self, req: CreateCourseRequest) -> Result<Course> {
+        let now = Utc::now();
+        let course = Course {
+            id: Uuid::new_v4().to_string(),
+            semester_id: req.semester_id,
+            subject_name: req.subject_name,
+            day_of_week: req.day_of_week,
+            period_index: req.period_index,
+            start_time: req.start_time,
+            end_time: req.end_time,
+            week_pattern: req.week_pattern.unwrap_or_else(|| "all".to_string()),
+            location: req.location,
+            teacher: req.teacher,
+            color: req.color,
+            flow_id: req.flow_id,
+            note: req.note,
+            created_at: now,
+            updated_at: now,
+        };
+
+        self.db.with_conn(|conn| {
+            conn.execute(
+                "INSERT INTO courses
+                 (id, semester_id, subject_name, day_of_week, period_index, start_time, end_time,
+                  week_pattern, location, teacher, color, flow_id, note, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
+                params![
+                    course.id,
+                    course.semester_id,
+                    course.subject_name,
+                    course.day_of_week,
+                    course.period_index,
+                    course.start_time,
+                    course.end_time,
+                    course.week_pattern,
+                    course.location,
+                    course.teacher,
+                    course.color,
+                    course.flow_id,
+                    course.note,
+                    course.created_at.to_rfc3339(),
+                    course.updated_at.to_rfc3339(),
+                ],
+            )?;
+            Ok(())
+        })?;
+
+        Ok(course)
+    }
+
+    /// 更新课程
+    pub fn update_course(&self, id: &str, req: UpdateCourseRequest) -> Result<Course> {
+        let mut course = self
+            .get_course(id)?
+            .ok_or_else(|| AppError::NotFound(format!("课程 {} 不存在", id)))?;
+
+        if let Some(subject_name) = req.subject_name {
+            course.subject_name = subject_name;
+        }
+        if let Some(day_of_week) = req.day_of_week {
+            course.day_of_week = day_of_week;
+        }
+        if let Some(period_index) = req.period_index {
+            course.period_index = Some(period_index);
+        }
+        if let Some(start_time) = req.start_time {
+            course.start_time = Some(start_time);
+        }
+        if let Some(end_time) = req.end_time {
+            course.end_time = Some(end_time);
+        }
+        if let Some(week_pattern) = req.week_pattern {
+            course.week_pattern = week_pattern;
+        }
+        if let Some(location) = req.location {
+            course.location = Some(location);
+        }
+        if let Some(teacher) = req.teacher {
+            course.teacher = Some(teacher);
+        }
+        if let Some(color) = req.color {
+            course.color = Some(color);
+        }
+        if let Some(flow_id) = req.flow_id {
+            course.flow_id = Some(flow_id);
+        }
+        if let Some(note) = req.note {
+            course.note = Some(note);
+        }
+        course.updated_at = Utc::now();
+
+        self.db.with_conn(|conn| {
+            conn.execute(
+                "UPDATE courses
+                 SET subject_name = ?2, day_of_week = ?3, period_index = ?4, start_time = ?5,
+                     end_time = ?6, week_pattern = ?7, location = ?8, teacher = ?9, color = ?10,
+                     flow_id = ?11, note = ?12, updated_at = ?13
+                 WHERE id = ?1",
+                params![
+                    course.id,
+                    course.subject_name,
+                    course.day_of_week,
+                    course.period_index,
+                    course.start_time,
+                    course.end_time,
+                    course.week_pattern,
+                    course.location,
+                    course.teacher,
+                    course.color,
+                    course.flow_id,
+                    course.note,
+                    course.updated_at.to_rfc3339(),
+                ],
+            )?;
+            Ok(())
+        })?;
+
+        Ok(course)
+    }
+
+    /// 删除课程
+    pub fn delete_course(&self, id: &str) -> Result<()> {
+        self.db.with_conn(|conn| {
+            conn.execute("DELETE FROM courses WHERE id = ?1", params![id])?;
+            Ok(())
+        })
+    }
+
+    // ============ 临时调课 CRUD ============
+
+    /// 列出指定学期某日期范围的调课记录
+    pub fn list_overrides(&self, semester_id: &str) -> Result<Vec<ScheduleOverride>> {
+        self.db.with_conn(|conn| {
+            let mut stmt = conn.prepare(
+                "SELECT id, semester_id, date, course_id, override_type, new_day_of_week,
+                        new_period_index, new_start_time, new_end_time, note, created_at
+                 FROM schedule_overrides
+                 WHERE semester_id = ?1
+                 ORDER BY date ASC",
+            )?;
+            let overrides = stmt
+                .query_map(params![semester_id], row_to_override)?
+                .collect::<rusqlite::Result<Vec<_>>>()?;
+            Ok(overrides)
+        })
+    }
+
+    /// 列出指定日期的调课记录
+    pub fn list_overrides_by_date(
+        &self,
+        semester_id: &str,
+        date: &str,
+    ) -> Result<Vec<ScheduleOverride>> {
+        self.db.with_conn(|conn| {
+            let mut stmt = conn.prepare(
+                "SELECT id, semester_id, date, course_id, override_type, new_day_of_week,
+                        new_period_index, new_start_time, new_end_time, note, created_at
+                 FROM schedule_overrides
+                 WHERE semester_id = ?1 AND date = ?2",
+            )?;
+            let overrides = stmt
+                .query_map(params![semester_id, date], row_to_override)?
+                .collect::<rusqlite::Result<Vec<_>>>()?;
+            Ok(overrides)
+        })
+    }
+
+    /// 创建临时调课记录
+    pub fn create_override(&self, req: CreateOverrideRequest) -> Result<ScheduleOverride> {
+        let override_record = ScheduleOverride {
+            id: Uuid::new_v4().to_string(),
+            semester_id: req.semester_id,
+            date: req.date,
+            course_id: req.course_id,
+            override_type: req.override_type,
+            new_day_of_week: req.new_day_of_week,
+            new_period_index: req.new_period_index,
+            new_start_time: req.new_start_time,
+            new_end_time: req.new_end_time,
+            note: req.note,
+            created_at: Utc::now(),
+        };
+
+        self.db.with_conn(|conn| {
+            conn.execute(
+                "INSERT INTO schedule_overrides
+                 (id, semester_id, date, course_id, override_type, new_day_of_week,
+                  new_period_index, new_start_time, new_end_time, note, created_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+                params![
+                    override_record.id,
+                    override_record.semester_id,
+                    override_record.date,
+                    override_record.course_id,
+                    override_record.override_type.as_str(),
+                    override_record.new_day_of_week,
+                    override_record.new_period_index,
+                    override_record.new_start_time,
+                    override_record.new_end_time,
+                    override_record.note,
+                    override_record.created_at.to_rfc3339(),
+                ],
+            )?;
+            Ok(())
+        })?;
+
+        Ok(override_record)
+    }
+
+    /// 删除临时调课记录
+    pub fn delete_override(&self, id: &str) -> Result<()> {
+        self.db.with_conn(|conn| {
+            conn.execute("DELETE FROM schedule_overrides WHERE id = ?1", params![id])?;
+            Ok(())
+        })
+    }
+
+    /// 删除指定日期的所有调课记录
+    pub fn delete_overrides_by_date(&self, semester_id: &str, date: &str) -> Result<()> {
+        self.db.with_conn(|conn| {
+            conn.execute(
+                "DELETE FROM schedule_overrides WHERE semester_id = ?1 AND date = ?2",
+                params![semester_id, date],
+            )?;
+            Ok(())
+        })
+    }
 }
 
 // ============ Row 映射函数 ============
@@ -518,3 +968,83 @@ fn row_to_log(row: &rusqlite::Row<'_>) -> rusqlite::Result<ExecutionLog> {
 
 // FaultStrategy 不需要 FromSql，因为通过 serde_json 序列化字符串存储
 // Default 实现由 common.rs 中的 #[derive(Default)] + #[default] variant 提供
+
+fn row_to_semester(row: &rusqlite::Row<'_>) -> rusqlite::Result<Semester> {
+    let is_active: i32 = row.get(5)?;
+    let created_str: String = row.get(6)?;
+    let updated_str: String = row.get(7)?;
+
+    Ok(Semester {
+        id: row.get(0)?,
+        name: row.get(1)?,
+        start_date: row.get(2)?,
+        end_date: row.get(3)?,
+        total_weeks: row.get(4)?,
+        is_active: is_active != 0,
+        created_at: DateTime::parse_from_rfc3339(&created_str)
+            .map(|dt| dt.with_timezone(&Utc))
+            .unwrap_or_else(|_| Utc::now()),
+        updated_at: DateTime::parse_from_rfc3339(&updated_str)
+            .map(|dt| dt.with_timezone(&Utc))
+            .unwrap_or_else(|_| Utc::now()),
+    })
+}
+
+fn row_to_class_period(row: &rusqlite::Row<'_>) -> rusqlite::Result<ClassPeriod> {
+    Ok(ClassPeriod {
+        id: row.get(0)?,
+        semester_id: row.get(1)?,
+        period_index: row.get(2)?,
+        start_time: row.get(3)?,
+        end_time: row.get(4)?,
+        label: row.get(5)?,
+    })
+}
+
+fn row_to_course(row: &rusqlite::Row<'_>) -> rusqlite::Result<Course> {
+    let created_str: String = row.get(13)?;
+    let updated_str: String = row.get(14)?;
+
+    Ok(Course {
+        id: row.get(0)?,
+        semester_id: row.get(1)?,
+        subject_name: row.get(2)?,
+        day_of_week: row.get(3)?,
+        period_index: row.get(4)?,
+        start_time: row.get(5)?,
+        end_time: row.get(6)?,
+        week_pattern: row.get(7)?,
+        location: row.get(8)?,
+        teacher: row.get(9)?,
+        color: row.get(10)?,
+        flow_id: row.get(11)?,
+        note: row.get(12)?,
+        created_at: DateTime::parse_from_rfc3339(&created_str)
+            .map(|dt| dt.with_timezone(&Utc))
+            .unwrap_or_else(|_| Utc::now()),
+        updated_at: DateTime::parse_from_rfc3339(&updated_str)
+            .map(|dt| dt.with_timezone(&Utc))
+            .unwrap_or_else(|_| Utc::now()),
+    })
+}
+
+fn row_to_override(row: &rusqlite::Row<'_>) -> rusqlite::Result<ScheduleOverride> {
+    let override_type_str: String = row.get(4)?;
+    let created_str: String = row.get(10)?;
+
+    Ok(ScheduleOverride {
+        id: row.get(0)?,
+        semester_id: row.get(1)?,
+        date: row.get(2)?,
+        course_id: row.get(3)?,
+        override_type: OverrideType::from_str(&override_type_str).unwrap_or(OverrideType::Cancel),
+        new_day_of_week: row.get(5)?,
+        new_period_index: row.get(6)?,
+        new_start_time: row.get(7)?,
+        new_end_time: row.get(8)?,
+        note: row.get(9)?,
+        created_at: DateTime::parse_from_rfc3339(&created_str)
+            .map(|dt| dt.with_timezone(&Utc))
+            .unwrap_or_else(|_| Utc::now()),
+    })
+}
