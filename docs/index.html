@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dominate — 个人自动化助手</title>
+  <title>Exero — 个人自动化助手</title>
   <meta name="description" content="基于 Tauri v2 + Rust 的 Windows 桌面自动化工具，采用快捷指令 + 可视化积木理念。">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23FFC131'/%3E%3Ctext x='50' y='72' font-size='64' font-weight='900' text-anchor='middle' fill='%23000' font-family='system-ui'%3ED%3C/text%3E%3C/svg%3E">
   <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
@@ -882,7 +882,7 @@
   <div class="nav-inner">
     <a href="#" class="nav-brand">
       <div class="nav-logo">D</div>
-      <span class="nav-name">Dominate</span>
+      <span class="nav-name">Exero</span>
       <span class="nav-badge">0.4.0-α</span>
     </a>
     <div class="nav-links">
@@ -896,7 +896,7 @@
       <div class="theme-btn" onclick="toggleTheme()" title="切换主题">
         <div class="theme-dot" id="themeDot"></div>
       </div>
-      <a href="https://github.com/ansoukin/Dominate" target="_blank" rel="noopener" class="gh-btn">
+      <a href="https://github.com/ansoukin/Exero" target="_blank" rel="noopener" class="gh-btn">
         <svg viewBox="0 0 24 24"><path d="M12 .5C5.4.5 0 5.9 0 12.5c0 5.3 3.4 9.8 8.2 11.4.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2 1-.3 2-.4 3-.4s2 .1 3 .4c2.3-1.5 3.3-1.2 3.3-1.2.7 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6 4.8-1.6 8.2-6.1 8.2-11.4C24 5.9 18.6.5 12 .5z"/></svg>
         GitHub
       </a>
@@ -918,7 +918,7 @@
       Phase 3 已完成 · 0.4.0-alpha.1
     </div>
     <h1 class="hero-title">
-      <span class="hero-title-gradient">Dominate</span>
+      <span class="hero-title-gradient">Exero</span>
     </h1>
     <p class="hero-tagline">
       让 <span class="hero-title-gradient" id="typewriter"></span><span class="cursor"></span>
@@ -927,7 +927,7 @@
       基于 Tauri v2 + Rust 的 Windows 桌面自动化工具。通过快捷指令 + 可视化积木理念，将时间触发、系统事件与 20+ 种动作类型自由组合。
     </p>
     <div class="hero-cta">
-      <a href="https://github.com/ansoukin/Dominate" target="_blank" rel="noopener" class="btn btn-accent">
+      <a href="https://github.com/ansoukin/Exero" target="_blank" rel="noopener" class="btn btn-accent">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.4.5 0 5.9 0 12.5c0 5.3 3.4 9.8 8.2 11.4.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2 1-.3 2-.4 3-.4s2 .1 3 .4c2.3-1.5 3.3-1.2 3.3-1.2.7 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6 4.8-1.6 8.2-6.1 8.2-11.4C24 5.9 18.6.5 12 .5z"/></svg>
         查看源码
       </a>
@@ -1176,8 +1176,8 @@ return { success = true, count = count }</code></pre>
 
     <div class="faq reveal">
       <div class="faq-item active">
-        <div class="faq-q" onclick="toggleFaq(this)"><span>Dominate 是什么？</span><span class="faq-chevron">+</span></div>
-        <div class="faq-a"><p>Dominate 是一款面向 Windows 的桌面自动化管理工具，定位为"个人自动化助手"。借鉴 iOS 快捷指令设计理念，通过拖拽积木块组合动作链，配合多种触发器实现日常场景的自动化管理。</p></div>
+        <div class="faq-q" onclick="toggleFaq(this)"><span>Exero 是什么？</span><span class="faq-chevron">+</span></div>
+        <div class="faq-a"><p>Exero 是一款面向 Windows 的桌面自动化管理工具，定位为"个人自动化助手"。借鉴 iOS 快捷指令设计理念，通过拖拽积木块组合动作链，配合多种触发器实现日常场景的自动化管理。</p></div>
       </div>
       <div class="faq-item">
         <div class="faq-q" onclick="toggleFaq(this)"><span>支持哪些操作系统？</span><span class="faq-chevron">+</span></div>
@@ -1185,7 +1185,7 @@ return { success = true, count = count }</code></pre>
       </div>
       <div class="faq-item">
         <div class="faq-q" onclick="toggleFaq(this)"><span>项目是开源的吗？</span><span class="faq-chevron">+</span></div>
-        <div class="faq-a"><p>完全开源，基于 MIT 协议发布。源代码托管在 <a href="https://github.com/ansoukin/Dominate" target="_blank" rel="noopener">GitHub</a>，欢迎 Star、Issue、PR。</p></div>
+        <div class="faq-a"><p>完全开源，基于 MIT 协议发布。源代码托管在 <a href="https://github.com/ansoukin/Exero" target="_blank" rel="noopener">GitHub</a>，欢迎 Star、Issue、PR。</p></div>
       </div>
       <div class="faq-item">
         <div class="faq-q" onclick="toggleFaq(this)"><span>Lua 脚本安全吗？</span><span class="faq-chevron">+</span></div>
@@ -1193,11 +1193,11 @@ return { success = true, count = count }</code></pre>
       </div>
       <div class="faq-item">
         <div class="faq-q" onclick="toggleFaq(this)"><span>数据存储在哪里？是否便携？</span><span class="faq-chevron">+</span></div>
-        <div class="faq-a"><p>数据存储在程序安装目录下的 <code>data/dominate.db</code>（SQLite）。便携式部署，支持 U 盘导入导出配置（<code>.dominate</code> 格式，含 JSON 数据 + Lua 脚本）。</p></div>
+        <div class="faq-a"><p>数据存储在程序安装目录下的 <code>data/exero.db</code>（SQLite）。便携式部署，支持 U 盘导入导出配置（<code>.exero</code> 格式，含 JSON 数据 + Lua 脚本）。</p></div>
       </div>
       <div class="faq-item">
         <div class="faq-q" onclick="toggleFaq(this)"><span>当前进度如何？</span><span class="faq-chevron">+</span></div>
-        <div class="faq-a"><p>Phase 1（核心调度 + 动作执行）、Phase 2（UI 骨架 + 首页 Dashboard）与 Phase 3（时间轴页面）均已完成。时间轴三视图、拖拽编辑、长按菜单、临时调课、学期制多周课表已联调通过。下一步进入 Phase 4（可视化编辑器）。完整计划见 <a href="https://github.com/ansoukin/Dominate/blob/main/docs/SPEC.md" target="_blank" rel="noopener">SPEC.md</a>。</p></div>
+        <div class="faq-a"><p>Phase 1（核心调度 + 动作执行）、Phase 2（UI 骨架 + 首页 Dashboard）与 Phase 3（时间轴页面）均已完成。时间轴三视图、拖拽编辑、长按菜单、临时调课、学期制多周课表已联调通过。下一步进入 Phase 4（可视化编辑器）。完整计划见 <a href="https://github.com/ansoukin/exero/blob/main/docs/SPEC.md" target="_blank" rel="noopener">SPEC.md</a>。</p></div>
       </div>
     </div>
   </div>
@@ -1282,11 +1282,11 @@ return { success = true, count = count }</code></pre>
     <h2 class="cta-title reveal">开始探索</h2>
     <p class="cta-desc reveal">源代码完全开源，欢迎 Star、Issue、PR。完整设计文档请见 SPEC.md。</p>
     <div class="cta-actions reveal">
-      <a href="https://github.com/ansoukin/Dominate" target="_blank" rel="noopener" class="btn btn-accent">
+      <a href="https://github.com/ansoukin/exero" target="_blank" rel="noopener" class="btn btn-accent">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.4.5 0 5.9 0 12.5c0 5.3 3.4 9.8 8.2 11.4.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2 1-.3 2-.4 3-.4s2 .1 3 .4c2.3-1.5 3.3-1.2 3.3-1.2.7 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6 4.8-1.6 8.2-6.1 8.2-11.4C24 5.9 18.6.5 12 .5z"/></svg>
         GitHub 仓库
       </a>
-      <a href="https://github.com/ansoukin/Dominate/blob/main/docs/SPEC.md" target="_blank" rel="noopener" class="btn btn-outline">
+      <a href="https://github.com/ansoukin/exero/blob/main/docs/SPEC.md" target="_blank" rel="noopener" class="btn btn-outline">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         设计文档
       </a>
